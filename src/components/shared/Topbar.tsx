@@ -1,14 +1,10 @@
-import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-import { Button } from "../ui/button";
-import { useSignOutAccount } from "@/lib/react-query/queries";
-import useAuthStore from "@/store/useAuthStore";
 import useAuth from "@/hooks/react-query/useAuth";
 
+import { Button } from "../ui/button";
+
 const Topbar = () => {
-  const navigate = useNavigate();
-  const { logout } = useAuthStore();
   const { logoutMutation } = useAuth();
 
   const handleSignOut = () => {
