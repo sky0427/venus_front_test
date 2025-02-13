@@ -1,9 +1,40 @@
-import { ApiResponse, CustomPage, Post } from "@/types/domain";
+import { ApiResponse, CustomPage, News, Post } from "@/types/domain";
 import axiosInstance from "./axios";
 
-type RequestPageParams = {
-  page: number;
-  limit: number;
+interface NewsRequestParams {
+  keyword?: string;
+  hasTitle?: boolean;
+  hasContent?: boolean;
+  hasPublisher?: boolean;
+  category?: string;
+  page?: number;
+  size?: number;
+}
+
+interface NewsInfiniteResponse {
+  postList: Post[];
+  lastTime: any;
+  lastId: bigint;
+}
+
+const getNews = async (
+  params: NewsRequestParams
+): Promise<CustomPage<News>> => {
+  const response = await axiosInstance.get<{ data: CustomPage<News> }>(
+    "/api/v1/news",
+    {
+      params: {
+        keyword: params.keyword,
+        title: params.hasTitle,
+        content: params.hasContent,
+        publisher: params.hasPublisher,
+        category: params.category,
+        page: params.page,
+        size: params.size,
+      },
+    }
+  );
+  return response.data.data;
 };
 
 type ResponseGetPosts = ApiResponse<CustomPage<Post[]>>;
@@ -67,12 +98,13 @@ const deletePost = async (id: number): Promise<RequestDelete> => {
   return data;
 };
 
-export { getPosts, deletePost, updatePost, getPostById };
+export { deletePost, getPostById, getPosts, updatePost, getNews };
 export type {
-  RequestPageParams,
-  ResponseGetPosts,
-  RequestUpdatePost,
-  ResponseUpdatePost,
   RequestDelete,
+  NewsRequestParams,
+  NewsInfiniteResponse,
+  RequestUpdatePost,
+  ResponseGetPosts,
   ResponseSinglePost,
+  ResponseUpdatePost,
 };

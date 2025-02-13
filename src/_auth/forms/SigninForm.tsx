@@ -3,6 +3,8 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import * as z from "zod";
 
+import KakaoLoginBtn from "@/components/buttons/KakaoLoginBtn";
+import NaverLoginBtn from "@/components/buttons/NaverLoginBtn";
 import Loader from "@/components/shared/Loader";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,13 +19,10 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import useAuth from "@/hooks/react-query/useAuth";
 import { SigninValidation } from "@/lib/validation";
-import useAuthStore from "@/store/useAuthStore";
 
 const SigninForm = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // const { login, profile } = useAuthStore();
 
   const form = useForm<z.infer<typeof SigninValidation>>({
     resolver: zodResolver(SigninValidation),
@@ -34,25 +33,20 @@ const SigninForm = () => {
   });
 
   const { loginMutation } = useAuth();
-  const { loginMutate, isLoginLoading, isError, error } = loginMutation;
+  const { mutate: loginMutate, isLoading: isLoginLoading } = loginMutation;
 
   const handleSignin = async (user: z.infer<typeof SigninValidation>) => {
     loginMutate(user, {
-      onSuccess: (data) => {
-        // login(data.accessToken, profile);
-
+      onSuccess: () => {
         form.reset;
-
         toast({
           title: "로그인 성공!",
           description: `NEWSNS에 오신걸 환영합니다.`,
         });
-
         navigate("/");
       },
 
       onError: (error: any) => {
-        console.log("로그인 실패", error);
         toast({
           title: "로그인 실패",
           description: `${error.message}`,
@@ -124,9 +118,11 @@ const SigninForm = () => {
               Sign up
             </Link>
           </p>
-
-          {isError && <p>Error: {error?.message} </p>}
         </form>
+        <div className="flex flex-row items-center justify-evenly w-full mt-8">
+          <KakaoLoginBtn />
+          <NaverLoginBtn />
+        </div>
       </div>
     </Form>
   );

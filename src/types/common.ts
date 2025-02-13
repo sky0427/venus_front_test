@@ -1,8 +1,3 @@
-import {
-  QueryKey,
-  UseMutationOptions,
-  UseQueryOptions,
-} from "@tanstack/react-query";
 import { AxiosError } from "axios";
 
 type ThemeMode = "light" | "dark";
@@ -13,15 +8,14 @@ type ResponseError = AxiosError<{
   error: string;
 }>;
 
-type UseMutationCustomOptions<TData = unknown, TVariables = unknown> = Omit<
-  UseMutationOptions<TData, ResponseError, TVariables, unknown>,
-  "mutationFn"
->;
-
-type UseQueryCustomOptions<TQueryFnData = unknown, TData = TQueryFnData> = Omit<
-  UseQueryOptions<TQueryFnData, ResponseError, TData, QueryKey>,
-  "queryKey"
->;
+interface UseMutationCustomOptions {
+  onSuccess?: (data?: any, variables?: any, context?: unknown) => void;
+  onError?: (error: any, variables?: any, context?: unknown) => void;
+}
+interface UseQueryCustomOptions<TData = unknown, TError = unknown> {
+  onSuccess?: (data: TData) => void;
+  onError?: (error: TError) => void;
+}
 
 export type {
   ResponseError,

@@ -26,7 +26,7 @@ const SignupForm = () => {
 
   // Queries
   const { signupMutation } = useAuth();
-  const { signupMutate, isSignupLoading } = signupMutation;
+  const { mutate: signupMutate, isLoading: isSignupLoading } = signupMutation;
 
   // Handler
   const handleSignup = (user: z.infer<typeof SignupValidation>) => {
@@ -34,6 +34,10 @@ const SignupForm = () => {
       signupMutate(user, {
         onSuccess: (data) => {
           console.log("회원가입 성공 후 zustand 업데이트: ", data);
+          navigate("/sign-in");
+          toast({
+            title: "회원가입 성공!",
+          });
         },
         onError: (error) => {
           console.error('회원가입 에러 발생: ', error);

@@ -10,19 +10,22 @@ const useBaseMutation = <T, R>(
   options?: UseMutationCustomOptions,
   onSuccessFunc?: (data: R) => void
 ) => {
-  const { mutate, isLoading, isError, error } = useMutation(mutationFn, {
-    onSuccess: (data: R, variables?: T, context?: unknown) => {
-      onSuccessFunc?.(data); // onSuccessFunc 있으면 실행
-      options?.onSuccess?.(data, variables, context);
-    },
-    onError: (error, variables?: T, context?: unknown) => {
-      console.error("Mutation 실패:", error);
-      options?.onError?.(error, variables, context);
-    },
-    ...options,
-  });
+  const { mutate, isLoading, isError, error, ...rest } = useMutation(
+    mutationFn,
+    {
+      onSuccess: (data: R, variables?: T, context?: unknown) => {
+        onSuccessFunc?.(data); // onSuccessFunc 있으면 실행
+        options?.onSuccess?.(data, variables, context);
+      },
+      onError: (error, variables?: T, context?: unknown) => {
+        console.error("Mutation 실패:", error);
+        options?.onError?.(error, variables, context);
+      },
+      ...options,
+    }
+  );
 
-  return { mutate, isLoading, isError, error };
+  return { mutate, isLoading, isError, error, ...rest };
 };
 
 export default useBaseMutation;

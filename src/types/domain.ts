@@ -1,5 +1,3 @@
-import { Url } from "url";
-
 interface ApiResponse<T> {
   returnCode: string;
   returnMessage: string;
@@ -20,10 +18,12 @@ type ImageUri = {
 };
 
 type Member = {
+  data(arg0: string, data: any): unknown;
   id: string;
   email: string;
   nickname: string;
-  profileUrl: URL | string;
+  profileUrl?: string;
+  role: string;
 };
 
 type Follow = {
@@ -33,11 +33,11 @@ type Follow = {
 };
 
 interface Profile {
+  id: number;
   email: string;
   nickname: string;
-  profileUrl: string | null;
+  profileUrl?: string;
   role: string;
-  id: bigint;
 }
 
 type Post = {
@@ -51,8 +51,20 @@ type Post = {
   contentUrl: string;
   category: string;
   publishedAt: string;
-  reposts: Repost[];
 };
+
+interface News {
+  id: bigint;
+  title: string;
+  content: string;
+  author: string;
+  publisherName: string;
+  imageUrl: string;
+  thumnailUrl: string;
+  contentUrl: string;
+  category: string;
+  publishedAt: string;
+}
 
 type UpdatePost = {
   newsId: bigint;
@@ -141,6 +153,7 @@ export type {
   LikeInfo,
   Member,
   Mention,
+  News,
   Notification,
   Post,
   Profile,

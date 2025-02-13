@@ -1,18 +1,18 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 
-import { INavLink } from "@/types";
-import { sidebarLinks } from "@/constants";
 import { Loader } from "@/components/shared";
 import { Button } from "@/components/ui/button";
+import { sidebarLinks } from "@/constants";
 import useAuth from "@/hooks/react-query/useAuth";
 import useAuthStore from "@/store/useAuthStore";
+import { INavLink } from "@/types";
 
 const LeftSidebar = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { isLoggedIn, profile } = useAuthStore();
-  const { logoutMutation, getProfileMutation } = useAuth();
-  const { isLoading: isProfileLoading } = getProfileMutation;
+  const { isLoggedIn } = useAuthStore();
+  const { member } = useAuthStore();
+  const { logoutMutation } = useAuth();
 
   const handleSignOut = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -34,24 +34,24 @@ const LeftSidebar = () => {
           />
         </Link>
 
-        {!isLoggedIn || isProfileLoading ? (
+        {!isLoggedIn ? (
           <div className="h-14">
             <Loader />
           </div>
         ) : (
           <Link
-            to={`/profile/${profile?.id}`}
+            to={`/profile/${member?.id}`}
             className="flex gap-3 items-center">
             <img
               src={
-                profile?.profileUrl || "/assets/icons/profile-placeholder.svg"
+                member?.profileUrl || "/assets/icons/profile-placeholder.svg"
               }
               alt="profile"
               className="h-14 w-14 rounded-full"
             />
             <div className="flex flex-col">
-              <p className="body-bold">{profile?.nickname}</p>
-              <p className="small-regular text-light-3">@{profile?.email}</p>
+              <p className="body-bold">{member?.nickname}</p>
+              <p className="small-regular text-light-3">@{member?.email}</p>
             </div>
           </Link>
         )}

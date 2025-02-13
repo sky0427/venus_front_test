@@ -10,8 +10,8 @@ interface TokenResponse {
 
 interface LoginRequest {
   email?: string;
-  password?: string;
-  provider?: string;
+  password?: string; // 소셜 로그인 불필요
+  provider?: "LOCAL" | "KAKAO" | "NAVER";
   providerId?: string;
 }
 
@@ -28,10 +28,7 @@ interface SignupRequest {
 const signup = async (request: SignupRequest): Promise<ApiResponse<any>> => {
   const response = await axiosInstance.post<ApiResponse<any>>(
     "/api/v1/member/signup",
-    request,
-    {
-      withCredentials: true,
-    }
+    request
   );
   return response.data;
 };
@@ -40,31 +37,52 @@ const signup = async (request: SignupRequest): Promise<ApiResponse<any>> => {
  * 로그인 API 호출 (액세스 토큰만 받음)
  */
 
-const login = async (request: LoginRequest): Promise<TokenResponse> => {
-  const response = await axiosInstance.post<ApiResponse<TokenResponse>>(
+const login = async (request: LoginRequest): Promise<ApiResponse<string>> => {
+  const response = await axiosInstance.post<ApiResponse<string>>(
     "/api/v1/member/login",
-    request,
+    request
+  );
+  return response.data;
+};
+
+// 카카오 로그인 API
+export const kakaoLogin = async (code: string) => {
+  const response = await axiosInstance.post(
+    "/oauth/callback/kakao",
+    { code },
     {
-      withCredentials: true,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
     }
   );
-  return response.data.data; // accessToken만 반환
+  return response.data;
+};
+
+// 네이버 로그인 API
+export const naverLogin = async (code: string, state: string) => {
+  const response = await axiosInstance.post(
+    "/oauth/callback/naver",
+    {
+      code,
+      state,
+    },
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    }
+  );
+  return response.data;
 };
 
 /**
  * 로그아웃 API 호출 (리프레시 토큰 삭제)
  */
 
-const logout = async (): Promise<void> => {
-  const response = await axiosInstance.post<ApiResponse<void>>(
-    "/api/v1/member/logout",
-    null,
-    { withCredentials: true }
-  );
-
-  if (response.data.returnCode !== "로그아웃 성공") {
-    throw new Error(response.data.returnMessage || "로그아웃 실패");
-  }
+const logout = async () => {
+  const response = await axiosInstance.post("/api/v1/member/logout");
+  return response.data;
 };
 
 /**
@@ -73,10 +91,7 @@ const logout = async (): Promise<void> => {
 
 const refreshAccessToken = async (): Promise<TokenResponse> => {
   const response = await axiosInstance.get<ApiResponse<TokenResponse>>(
-    `/api/v1/member/refresh`,
-    {
-      withCredentials: true,
-    }
+    `/api/v1/member/refresh`
   );
   return response.data.data;
 };

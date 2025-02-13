@@ -1,44 +1,52 @@
-import { getUserProfile } from "@/api/user";
+import { getCurrentUser } from "@/api/user";
 import { queryKeys } from "@/constants";
 import useAuthStore from "@/store/useAuthStore";
-import { Profile } from "@/types";
+import { Member } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 
 /**
  * 내 프로필 정보 가져오기 Query 훅
  */
 
-function useGetUserProfile() {
-  const { setProfile, logout } = useAuthStore();
+function useGetCurrentUser() {
+  const { setMember } = useAuthStore();
 
   const {
-    data: profile,
+    data: response,
     isLoading,
     isError,
     error,
-  } = useQuery<Profile, Error>({
-    queryKey: [queryKeys.GET_USER_PROFILE],
-    queryFn: getUserProfile,
+    refetch,
+  } = useQuery<Member, Error>({
+    queryKey: [queryKeys.GET_CURRENT_USER],
+    queryFn: getCurrentUser,
     onSuccess: (data) => {
-      setProfile(data);
+      try {
+        setMember(data);
+        console.log("유저 정보를 가져옵니다: ", data);
+      } catch (error) {
+        console.error("유저 정보 가져오기 실패:", data);
+        setMember(null);
+      }
     },
     onError: (error) => {
-      console.log("인증 실패: ", error);
-      logout();
+      console.error("인증 실패:", error);
+      setMember(null);
     },
     retry: false,
     staleTime: Infinity,
     cacheTime: Infinity,
+    enabled: false,
   });
 
-  return { profile, isLoading, isError, error };
+  return { member: response?.data, isLoading, isError, error, refetch };
 }
 
 function useUser() {
-  const getUserProfile = useGetUserProfile();
+  const getCurrentUser = useGetCurrentUser();
 
   return {
-    getUserProfile,
+    getCurrentUser,
   };
 }
 

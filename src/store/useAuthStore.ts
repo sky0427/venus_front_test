@@ -1,31 +1,40 @@
-import { Profile } from "@/types";
-import { Cookies } from "react-cookie";
+import { getCookie, removeCookie } from "@/hooks/useCookie";
+import { Member } from "@/types";
 import { create } from "zustand";
-
-const cookies = new Cookies();
 
 interface AuthState {
   isLoggedIn: boolean;
-  accessToken: string | null;
-  profile: Profile | null;
-  login: (accessToken: string, profile: Profile) => void;
+  member: Member | null;
+  login: (member: Member) => void;
+  checkLogin: () => void;
   logout: () => void;
-  setProfile: (profile: Profile) => void;
+  setMember: (member: Member | null) => void;
 }
 
-const useAuthStore = create<AuthState>()((set) => ({
-  isLoggedIn: false,
-  accessToken: null,
-  profile: null,
-  login: (accessToken, profile) => {
-    set({ isLoggedIn: true, accessToken, profile });
-    cookies.set("accessToken", accessToken, { path: "/" });
-  },
-  logout: () => {
-    cookies.remove("accessToken");
-    set({ isLoggedIn: false, accessToken: null, profile: null });
-  },
-  setProfile: (profile: Profile) => set({ profile }),
-}));
+const useAuthStore = create<AuthState>()((set) => {
+  return {
+    isLoggedIn: false,
+    member: null,
+    login: (member) => {
+      set({ isLoggedIn: true, member: member });
+    },
+    checkLogin: () => {
+      const accessToken = getCookie("accessToken");
+      const refreshToken = getCookie("refreshToken");
+
+      if (accessToken && refreshToken) {
+        set({ isLoggedIn: true });
+      } else {
+        set({ member: null, isLoggedIn: false });
+      }
+    },
+    logout: () => {
+      removeCookie("accessToken");
+      removeCookie("refreshToken");
+      set({ isLoggedIn: false, member: null });
+    },
+    setMember: (member) => set({ member }),
+  };
+});
 
 export default useAuthStore;

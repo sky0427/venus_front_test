@@ -1,48 +1,61 @@
-import { Models } from "appwrite";
-
 // import { useToast } from "@/components/ui/use-toast";
-import { Loader, PostCard, UserCard } from "@/components/shared";
-import { useGetRecentPosts, useGetUsers } from "@/lib/react-query/queries";
+import { Loader, PostCard } from "@/components/shared";
+import { useNews } from "@/hooks/react-query/usePost";
+import { useNewsStore } from "@/store/usePostStore";
+import { useCallback, useRef } from "react";
 
 const Home = () => {
   // const { toast } = useToast();
 
-  const {
-    data: posts,
-    isLoading: isPostLoading,
-    isError: isErrorPosts,
-  } = useGetRecentPosts();
-  const {
-    data: creators,
-    isLoading: isUserLoading,
-    isError: isErrorCreators,
-  } = useGetUsers(10);
+  const { error, fetchNextPage, hasNextPage, isFetching, status } = useNews({});
 
-  if (isErrorPosts || isErrorCreators) {
+  const newsList = useNewsStore((state) => state.newsList);
+
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastNewsElementRef = useCallback(
+    (node: HTMLLIElement) => {
+      if (isFetching) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasNextPage) {
+          fetchNextPage();
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [isFetching, fetchNextPage, hasNextPage]
+  );
+
+  if (status === "loading")
     return (
-      <div className="flex flex-1">
-        <div className="home-container">
-          <p className="body-medium text-light-1">Something bad happened</p>
-        </div>
-        <div className="home-creators">
-          <p className="body-medium text-light-1">Something bad happened</p>
-        </div>
-      </div>
+      <>
+        <Loader />
+      </>
     );
-  }
+  if (status === "error")
+    return (
+      <p>Error: {error instanceof Error ? error.message : "Unknown Error"}</p>
+    );
 
   return (
     <div className="flex flex-1">
       <div className="home-container">
         <div className="home-posts">
           <h2 className="h3-bold md:h2-bold text-left w-full">Home Feed</h2>
-          {isPostLoading && !posts ? (
+          {isFetching && !newsList ? (
             <Loader />
           ) : (
             <ul className="flex flex-col flex-1 gap-9 w-full ">
-              {posts?.documents.map((post: Models.Document) => (
-                <li key={post.$id} className="flex justify-center w-full">
-                  <PostCard post={post} />
+              {newsList.map((news, index) => (
+                <li
+                  key={news.id}
+                  className="flex justify-center w-full"
+                  ref={
+                    index === newsList.length - 1
+                      ? lastNewsElementRef
+                      : undefined
+                  }>
+                  <PostCard news={news} />
                 </li>
               ))}
             </ul>
@@ -50,7 +63,7 @@ const Home = () => {
         </div>
       </div>
 
-      <div className="home-creators">
+      {/* <div className="home-creators">
         <h3 className="h3-bold text-light-1">Top Creators</h3>
         {isUserLoading && !creators ? (
           <Loader />
@@ -63,7 +76,7 @@ const Home = () => {
             ))}
           </ul>
         )}
-      </div>
+      </div> */}
     </div>
   );
 };
