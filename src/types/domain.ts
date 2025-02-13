@@ -1,3 +1,5 @@
+import { Url } from "url";
+
 interface ApiResponse<T> {
   returnCode: string;
   returnMessage: string;
@@ -30,13 +32,13 @@ type Follow = {
   followee: string;
 };
 
-type Profile = {
-  id: bigint;
+interface Profile {
   email: string;
   nickname: string;
-  imageUri: string | null;
-  loginType: "local" | "kakao" | "naver";
-};
+  profileUrl: string | null;
+  role: string;
+  id: bigint;
+}
 
 type Post = {
   id: bigint;
@@ -128,14 +130,21 @@ type Notification = {
 };
 
 export type {
-  ApiResponse, Comment,
+  ApiResponse,
+  Comment,
   CommentInfo,
-  CommentMention, CustomPage, Follow, ImageUri, Like,
+  CommentMention,
+  CustomPage,
+  Follow,
+  ImageUri,
+  Like,
   LikeInfo,
   Member,
   Mention,
   Notification,
-  Post, Profile,
+  Post,
+  Profile,
   Repost,
-  RepostUnderNews, UpdatePost
+  RepostUnderNews,
+  UpdatePost,
 };

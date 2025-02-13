@@ -5,19 +5,25 @@ import * as z from "zod";
 
 import Loader from "@/components/shared/Loader";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import useAuth from "@/hooks/react-query/useAuth";
 import { SigninValidation } from "@/lib/validation";
 import useAuthStore from "@/store/useAuthStore";
-import axios from "axios";
-import { useEffect, useState } from "react";
 
 const SigninForm = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [isLoading, setLoading] = useState(false);
+
+  // const { login, profile } = useAuthStore();
 
   const form = useForm<z.infer<typeof SigninValidation>>({
     resolver: zodResolver(SigninValidation),
@@ -28,64 +34,31 @@ const SigninForm = () => {
   });
 
   const { loginMutation } = useAuth();
-  const { loginMutate, isLoginLoading } = loginMutation;
+  const { loginMutate, isLoginLoading, isError, error } = loginMutation;
 
   const handleSignin = async (user: z.infer<typeof SigninValidation>) => {
+    loginMutate(user, {
+      onSuccess: (data) => {
+        // login(data.accessToken, profile);
 
-    const isLoggedIn = useAuthStore();
+        form.reset;
 
-    loginMutate(user);
+        toast({
+          title: "로그인 성공!",
+          description: `NEWSNS에 오신걸 환영합니다.`,
+        });
 
-    if (isLoggedIn) {
-      form.reset();
+        navigate("/");
+      },
 
-      navigate("/");
-    } else {
-      toast({ title: "Login failed. Please try again.", });
-
-      return;
-    }
-  };
-
-  const [error, setError] = useState(null);
-  const [userData, setUserData] = useState(null);
-
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessToken = urlParams.get('accessToken');
-    const refreshToken = urlParams.get('refreshToken');
-
-    if (accessToken && refreshToken) {
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      fetchUserData(accessToken);
-    }
-  }, []);
-
-  const fetchUserData = async (accessToken: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await axios.get("/api/user/me", {
-        // 사용자 정보 API 엔드포인트
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      setUserData(response.data);
-    } catch (error: any) {
-      console.error("Error fetching user data:", error);
-      setError(error.message || "Failed to fetch user data.");
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      // 로그아웃 처리 또는 로그인 페이지로 리다이렉트
-    } finally {
-      setLoading(false);
-    }
+      onError: (error: any) => {
+        console.log("로그인 실패", error);
+        toast({
+          title: "로그인 실패",
+          description: `${error.message}`,
+        });
+      },
+    });
   };
 
   return (
@@ -130,8 +103,11 @@ const SigninForm = () => {
             )}
           />
 
-          <Button type="submit" className="shad-button_primary">
-            {isLoading || isLoginLoading ? (
+          <Button
+            type="submit"
+            className="shad-button_primary"
+            disabled={form.formState.isSubmitting}>
+            {isLoginLoading ? (
               <div className="flex-center gap-2">
                 <Loader /> Loading...
               </div>
@@ -149,7 +125,7 @@ const SigninForm = () => {
             </Link>
           </p>
 
-          {error && <p>Error: {error}</p>}
+          {isError && <p>Error: {error?.message} </p>}
         </form>
       </div>
     </Form>

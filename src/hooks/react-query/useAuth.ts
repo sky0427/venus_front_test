@@ -1,68 +1,67 @@
-
-import { login, logout, refreshAccessToken, signup, TokenResponse } from "@/api";
+import {
+  login,
+  logout,
+  refreshAccessToken,
+  signup,
+  TokenResponse,
+} from "@/api";
 import axiosInstance from "@/api/axios";
+import { getUserProfile } from "@/api/user";
 import { queryKeys } from "@/constants";
 import { numbers } from "@/constants/numbers";
 import useAuthStore from "@/store/useAuthStore";
-import { UseMutationCustomOptions } from "@/types";
-import { MutationFunction, useMutation, useQuery } from "@tanstack/react-query";
+import { Profile, UseMutationCustomOptions } from "@/types";
+import {
+  MutationFunction,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import useBaseMutation from "./useBase";
 
 /**
  * 로그인 Mutation 훅
  */
 
-function useLogin<T> (
+function useLogin<T>(
   loginAPI: MutationFunction<TokenResponse, T>,
-  mutationOptions?: UseMutationCustomOptions,
+  mutationOptions?: UseMutationCustomOptions
 ) {
   const store = useAuthStore();
-  const {
-    mutate: loginMutate,
-    isLoading: isLoginLoading,
-    isError,
-    error,
-  } = useMutation(loginAPI, {
-    onSuccess: (data: TokenResponse) => {
-      store.login(data.accessToken);
-      axiosInstance.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${data.accessToken}`;
-    },
-    onError: (error) => {
-      console.error("로그인 실패:", error);
-    },
+  const queryClient = useQueryClient();
+
+  return useBaseMutation<T, TokenResponse>(loginAPI, {
     ...mutationOptions,
+    onSuccess: async (data: any) => {
+      try {
+        const profileResponse = await queryClient.fetchQuery({
+          queryKey: [queryKeys.GET_USER_PROFILE],
+          queryFn: getUserProfile,
+        });
+
+        store.login(data.accessToken, profileResponse as Profile);
+      } catch (error) {
+        console.error("프로필 정보 가져오기 실패: ", error);
+      }
+    },
   });
-  return { loginMutate, isLoginLoading, isError, error };
 }
 
 function useLocalLogin(mutationOptions?: UseMutationCustomOptions) {
   return useLogin(login, mutationOptions);
 }
 
+// function useKakaoLogin (mutationOptions?: UseMutationCustomOptions) {
+//   return useLogin(socialLogin, mutationOptions);
+// }
+
 /**
  * 회원가입 Mutation 훅
  */
 
 function useSignup(mutationOptions?: UseMutationCustomOptions) {
-  const {
-    mutate: signupMutate,
-    isLoading: isSignupLoading,
-    isError: isSignupError,
-    error: signupError,
-  } = useMutation(signup, {
-    onSuccess: (data) => {
-      console.log("회원가입 성공:", data.returnMessage);
-      // 성공 후 처리 (예: 로그인 페이지로 리다이렉트, 성공 메시지 표시)
-    },
-    onError: (error) => {
-      console.error("회원가입 실패:", error);
-      // 에러 처리 (예: 에러 메시지 표시)
-    },
-    ...mutationOptions
+  return useBaseMutation(signup, mutationOptions, (data) => {
+    console.log("회원가입 성공", data.data);
   });
-
-  return { signupMutate, isSignupLoading, isSignupError, signupError };
 }
 
 /**
@@ -71,18 +70,16 @@ function useSignup(mutationOptions?: UseMutationCustomOptions) {
 
 function useRefreshAccessToken() {
   const store = useAuthStore();
-  const {
-    data,
-    error,
-    isSuccess,
-    isError,
-    isLoading
-  } = useQuery<TokenResponse, Error> ([queryKeys.REFRESH_ACCESS_TOKEN], refreshAccessToken, {
+  const { data, error, isSuccess, isError, isLoading } = useQuery<
+    TokenResponse,
+    Error
+  >({
+    queryKey: [queryKeys.REFRESH_ACCESS_TOKEN],
+    queryFn: refreshAccessToken,
     onSuccess: (data) => {
-      store.login(data.accessToken);
-      axiosInstance.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${data.accessToken}`;
+      store.login(data.accessToken, store.profile!);
+      axiosInstance.defaults.headers.common["Authorization"] =
+        `Bearer ${data.accessToken}`;
     },
     onError: (error) => {
       console.log("액세스 토큰 갱신 실패: ", error);
@@ -101,15 +98,16 @@ function useRefreshAccessToken() {
 
 function useLogout(mutationOptions?: UseMutationCustomOptions) {
   const store = useAuthStore();
-  return useMutation(logout, {
+  const queryClient = useQueryClient();
+
+  return useBaseMutation(logout, {
+    ...mutationOptions,
     onSuccess: () => {
       store.logout();
-      delete axiosInstance.defaults.headers.common['Authorization'];
+      delete axiosInstance.defaults.headers.common["Authorization"];
+      queryClient.removeQueries({ queryKey: [queryKeys.GET_USER_PROFILE] });
+      queryClient.removeQueries({ queryKey: [queryKeys.REFRESH_ACCESS_TOKEN] });
     },
-    onError: (error) => {
-      console.error('로그아웃 실패: ', error);
-    },
-    ...mutationOptions,
   });
 }
 

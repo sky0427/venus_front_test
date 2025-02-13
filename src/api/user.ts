@@ -3,33 +3,39 @@ import { Url } from "url";
 import axiosInstance from "./axios";
 import { useCookies } from "react-cookie";
 
-
 // ============================================================
 // 유저 정보 관리
 // ============================================================
-
-type RequestProfile = {
-  memberId: bigint;
-  password: string;
+interface MemberDto {
+  id: bigint;
+  email: string;
   nickname: string;
   profileUrl: string | Url;
-};
+  role: string;
+}
 
 type ResponseProfile = Profile;
 
-// 내 프로필 조회
-const getUserProfile = async (): Promise<ResponseProfile> => {
-  const [cookies] = useCookies(['accessToken']);
-  const accessToken = cookies;
-  const response = await axiosInstance.get(`/api/member/me`, {
-    headers: {Authorization: `Bearer ${accessToken}`}
-  });
-  return response.data;
+// 액세스 토큰으로 사용자 정보 가져오기
+const getUserProfile = async (): Promise<Profile> => {
+  try {
+    const response =
+      await axiosInstance.get<ApiResponse<Profile>>(`/api/v1/member/auth`);
+
+    if (response.data.returnCode !== "SUCCESS") {
+      throw new Error(response.data.returnMessage || "인증 실패!");
+    }
+
+    return response.data.data;
+  } catch (error: any) {
+    console.error("인증 실패: ", error);
+    throw error;
+  }
 };
 
 // 프로필 수정
 const editProfile = async (
-  request: RequestProfile,
+  request: Profile,
   imageFile: any
 ): Promise<ApiResponse<null>> => {
   const { data } = await axiosInstance.patch(`/api/member/update`, imageFile, {
@@ -39,4 +45,4 @@ const editProfile = async (
 };
 
 export { editProfile, getUserProfile };
-export type { RequestProfile, ResponseProfile };
+export type { MemberDto, ResponseProfile };
